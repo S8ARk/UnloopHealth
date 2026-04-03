@@ -36,9 +36,9 @@ def create_app(test_config=None):
             "version": "1.0.0"
         }), 200
 
-    # Register blueprints (to be implemented)
-    # from blueprints.auth_bp import auth_bp
-    # app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    # Register blueprints
+    from blueprints.auth_bp import auth_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
     return app
 
