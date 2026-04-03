@@ -7,3 +7,4 @@ marshmallow
 python-dotenv
 pytest
 mongomock
+certifi
