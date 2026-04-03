@@ -1,4 +1,5 @@
 import os
+import certifi
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -13,7 +14,10 @@ class Database:
 
     def connect(self):
         try:
-            self.client = MongoClient(self.uri)
+            # Use certifi for SSL/TLS verification
+            ca = certifi.where()
+            self.client = MongoClient(self.uri, tlsCAFile=ca)
+            
             # Explicitly check for the default database if specified in the URI
             default_db = self.client.get_default_database()
             if default_db is not None:
