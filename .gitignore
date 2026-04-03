@@ -1,6 +1,58 @@
-legacy/
-.env
+# ===========================
+#  Large Data / ML Datasets  (too big for git - >10MB)
+# ===========================
+data/health_fitness_dataset.csv
+data/Nutrition__Physical_Activity__and_Obesity.csv
+data/master_health_data.csv
+*.pkl
+
+# ===========================
+#  Python
+# ===========================
 __pycache__/
-node_modules/
-venv/
+*.py[cod]
+*.pyo
 .pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# ===========================
+#  Virtual Environments
+# ===========================
+venv/
+server/venv/
+env/
+.venv/
+
+# ===========================
+#  Node
+# ===========================
+node_modules/
+
+# ===========================
+#  Legacy / Archived Code
+# ===========================
+legacy/
+
+# ===========================
+#  Logs & Test Artifacts
+# ===========================
+logs/
+tmp/
+
+# ===========================
+#  Environment & Credentials
+# ===========================
+.env
+.env.*
+!.env.example
+
+# ===========================
+#  OS / Editor Junk
+# ===========================
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
