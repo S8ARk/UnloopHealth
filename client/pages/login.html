@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | NutriCore 2.0</title>
   <link rel="stylesheet" href="../css/base.css">
-  <script src="../js/api.js" defer></script>
   <style>
     .auth-container {
       display: flex;
@@ -98,7 +97,9 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { api } from '../js/api.js';
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -109,8 +110,7 @@
       try {
         errorEl.style.display = 'none';
         
-        // Use the window.api object we created in api.js
-        await window.api.login(email, password);
+        await api.login(email, password);
         
         // Redirect on success
         window.location.href = 'dashboard.html';
