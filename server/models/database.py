@@ -2,6 +2,7 @@ import os
 import certifi
 from pymongo import MongoClient
 from dotenv import load_dotenv
+from bson.objectid import ObjectId
 
 # Load environment variables
 load_dotenv()
@@ -39,9 +40,13 @@ class Database:
         return self.db[collection_name]
 
     def get_user_profile(self, user_id):
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
         return self.get_collection('users').find_one({"_id": user_id})
 
     def update_user_profile(self, user_id, profile_data):
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
         return self.get_collection('users').update_one(
             {"_id": user_id},
             {"$set": {"profile": profile_data}}
