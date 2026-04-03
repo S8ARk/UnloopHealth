@@ -14,8 +14,13 @@ class Database:
     def connect(self):
         try:
             self.client = MongoClient(self.uri)
-            # Access the database specified in the URI or default to 'nutricore'
-            self.db = self.client.get_default_database() or self.client['nutricore']
+            # Explicitly check for the default database if specified in the URI
+            default_db = self.client.get_default_database()
+            if default_db is not None:
+                self.db = default_db
+            else:
+                self.db = self.client['nutricore']
+                
             # Ping the database to check connectivity
             self.client.admin.command('ping')
             print("Successfully connected to MongoDB")
