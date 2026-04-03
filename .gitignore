@@ -1,0 +1,6 @@
+legacy/
+.env
+__pycache__/
+node_modules/
+venv/
+.pytest_cache/
