@@ -39,9 +39,13 @@ class MLService:
         """
         # --- PURE PYTHON FALLBACK LOGIC ---
         # Calculate a deterministic risk score based on deviations from baseline
-        bmi = user_data.get("bmi", 22.0)
-        steps = user_data.get("daily_steps", 5000)
-        sleep = user_data.get("sleep_hours", 7.0)
+        try:
+            bmi = float(user_data.get("bmi", 22.0))
+            steps = float(user_data.get("daily_steps", 5000))
+            sleep = float(user_data.get("sleep_hours", 7.0))
+            calories = float(user_data.get("daily_calories", 2000))
+        except (ValueError, TypeError):
+            bmi, steps, sleep, calories = 22.0, 5000.0, 7.0, 2000.0
         
         risk_score = 0
         if bmi > 25: risk_score += (bmi - 25) * 0.2
@@ -55,14 +59,46 @@ class MLService:
         else: risk_label = "Critical"
         
         # Simple BMI trend: If steps < 5000 and calories > 2500, BMI goes up
-        calories = user_data.get("daily_calories", 2000)
         fut_bmi = bmi + (0.1 if (steps < 5000 and calories > 2500) else -0.05)
         
         recs = self.generate_recs(user_data, risk_label)
         
+        # Create Dynamic Vulnerability Proxy
+        conditions = str(user_data.get("medical_conditions", "")).lower()
+        
+        # Base probabilities
+        p_hyp = 0.15
+        p_met = 0.10
+        p_card = 0.10
+        p_imm = 0.15
+        
+        # Rules engine
+        if "hypertension" in conditions or "blood pressure" in conditions: p_hyp += 0.40
+        if bmi > 25: 
+            p_met += (bmi - 25) * 0.05
+            p_card += 0.20
+            p_hyp += 0.15
+        if bmi > 30: p_met += 0.20
+        if steps < 5000: 
+            p_card += 0.25
+            p_imm += 0.10
+            p_met += 0.10
+        if sleep < 6:
+            p_imm += 0.35
+            p_card += 0.15
+            p_hyp += 0.10
+            
+        # Normalize and cap
+        risk_probs = {
+            "Hypertension": min(round(p_hyp, 2), 0.95),
+            "Metabolic Syndrome": min(round(p_met, 2), 0.95),
+            "Cardiovascular": min(round(p_card, 2), 0.95),
+            "Immune Fatigue": min(round(p_imm, 2), 0.95)
+        }
+        
         return {
             "risk_label": risk_label,
-            "risk_probs": {"Low": 0.25, "Moderate": 0.25, "High": 0.25, "Critical": 0.25}, # Proxy
+            "risk_probs": risk_probs,
             "future_bmi": round(float(fut_bmi), 2),
             "recommendations": recs
         }
@@ -73,22 +109,68 @@ class MLService:
 
     def generate_recs(self, row, risk):
         recs = []
-        bmi = row.get("bmi", 22.0)
-        if bmi > 30: recs.append("⚠ BMI is in Obese range - target 0.5kg/week weight loss.")
-        if row.get("sleep_hours", 7) < 7: recs.append("😴 Insufficient sleep - target 7-9 hours to lower cortisol.")
-        if row.get("daily_steps", 5000) < 5000: recs.append("🏃 Increase daily movement - target 8,000+ steps.")
+        dos = []
+        donts = []
         
-        # Personalized Tips based on user goals
-        dos = ["Drink 2L+ Water", "Eat more fiber", "15 mins sunlight"]
-        donts = ["Excess refined sugar", "Sitting for 2+ hours", "Late night snacking"]
-        
-        if row.get("fasting_glucose", 90) > 100:
+        try:
+            bmi = float(row.get("bmi", 22.0))
+            sleep = float(row.get("sleep_hours", 7))
+            steps = float(row.get("daily_steps", 5000))
+            glucose = float(row.get("fasting_glucose", 90))
+        except (TypeError, ValueError):
+            bmi, sleep, steps, glucose = 22.0, 7.0, 5000.0, 90.0
+
+        conditions = str(row.get("medical_conditions", "")).lower()
+
+        # Dynamic BMI Logic
+        if bmi > 25:
+            recs.append("⚠ BMI is in Overweight/Obese range - target 0.5kg/week weight loss.")
+            dos.append("Prioritize Lean Proteins")
+            donts.append("Excess refined carbohydrates")
+        elif bmi < 18.5:
+            recs.append("⚠ BMI indicates underweight status.")
+            dos.append("Increase caloric intake optimally")
+            donts.append("Skipping primary meals")
+        else:
+            dos.append("Maintain current caloric baseline")
+
+        # Dynamic Sleep Logic
+        if sleep < 7:
+            recs.append("😴 Insufficient sleep - target 7-9 hours to lower cortisol.")
+            dos.append("Implement screen-free hour before bed")
+            donts.append("Caffeine consumption after 3 PM")
+        else:
+            dos.append("Maintain 7-9 hours sleep rhythm")
+
+        # Dynamic Activity Logic
+        if steps < 6000:
+            recs.append("🏃 Increase daily movement - target 8,000+ steps.")
+            dos.append("15 min post-meal walking")
+            donts.append("Sitting for 2+ uninterrupted hours")
+        else:
+            dos.append("Continue daily step targets")
+
+        # Dynamic Medical Conditions Pattern Matching
+        if "hypertension" in conditions or "blood pressure" in conditions:
+            dos.append("Monitor sodium intake < 1500mg/day")
+            donts.append("High-sodium processed foods")
+        if "diabet" in conditions or glucose > 100:
+            dos.append("Prioritize Low-GI foods")
             donts.append("⚠ Avoid high-GI processed carbs immediately.")
         
+        # Hydration Defaults
+        water_intake = row.get("water_intake_goal", 2)
+        dos.append(f"Drink {water_intake}L+ Water daily")
+
         if risk in ("High", "Critical"):
             recs.append("🏥 HIGH RISK - please consult a wellness professional.")
             
-        return {"recs": recs, "dos": dos, "donts": donts}
+        # Deduplicate and return top 4
+        return {
+            "recs": list(dict.fromkeys(recs))[:4], 
+            "dos": list(dict.fromkeys(dos))[:4], 
+            "donts": list(dict.fromkeys(donts))[:4]
+        }
 
 # Global Instance
 ml_service = MLService()
