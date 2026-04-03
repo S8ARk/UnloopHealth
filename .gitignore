@@ -40,6 +40,9 @@ legacy/
 # ===========================
 logs/
 tmp/
+server/tests/
+server/tests_out.txt
+server/api_tests_out.txt
 
 # ===========================
 #  Environment & Credentials
