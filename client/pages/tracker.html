@@ -7,42 +7,6 @@
   <link rel="stylesheet" href="../css/base.css">
   <script src="../js/api.js" defer></script>
   <style>
-    .dashboard-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      min-height: 100vh;
-    }
-    
-    .sidebar {
-      background: rgba(15, 23, 42, 0.9);
-      border-right: 1px solid var(--border);
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-    
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      transition: var(--transition);
-    }
-    
-    .nav-item:hover, .nav-item.active {
-      background: rgba(99, 102, 241, 0.1);
-      color: var(--primary);
-    }
-    
-    .main-content {
-      padding: 3rem;
-    }
-    
     .tracker-grid {
       display: grid;
       grid-template-columns: 1fr 350px;
@@ -115,6 +79,20 @@
       <div class="tracker-grid">
         <div class="tracker-main">
           <div class="glass-card search-card">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <select id="mealTypeSelect" class="input-field" style="width: auto; flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+                <option value="Breakfast" style="color: black;">Breakfast</option>
+                <option value="Lunch" style="color: black;">Lunch</option>
+                <option value="Snacks" style="color: black;" selected>Snacks</option>
+                <option value="Dinner" style="color: black;">Dinner</option>
+              </select>
+              <select id="dietTypeSelect" class="input-field" style="width: auto; flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+                <option value="All" style="color: black;">All Diets</option>
+                <option value="Veg" style="color: black;">Vegetarian</option>
+                <option value="Vegan" style="color: black;">Vegan</option>
+                <option value="Non-Veg" style="color: black;">Non-Veg</option>
+              </select>
+            </div>
             <input type="text" id="foodSearch" class="input-field" placeholder="Search foods (e.g. Roti, Paneer)...">
             <div id="searchResults" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
           </div>
@@ -177,7 +155,7 @@
     </main>
 
   <script type="module">
-    import { api } from '../js/api.js';
+    import { api } from '../js/api.js?v=2';
 
     const searchInput = document.getElementById('foodSearch');
     const resultsDiv = document.getElementById('searchResults');
@@ -185,19 +163,20 @@
 
     searchInput.addEventListener('input', async (e) => {
         const q = e.target.value;
+        const diet = document.getElementById('dietTypeSelect').value;
         if (q.length < 2) { resultsDiv.innerHTML = ''; return; }
         
         try {
-            const foods = await api.get(`/tracker/search?q=${q}`);
+            const foods = await api.searchFoods(q, diet);
             resultsDiv.innerHTML = foods.map(f => `
-                <div class="food-item" style="cursor:pointer;" onclick="logFood('${f.name}', ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fats})">
+                <div class="food-item" style="cursor:pointer;" onclick="logFood('${f.name}', ${f.calories}, ${f.protein}, ${f.carbohydrates || f.carbs}, ${f.fats || f.fat})">
                     <div>
                         <strong>${f.name}</strong>
-                        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">${f.per_unit || '100g'}</div>
+                        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">${f.dietType || 'Unknown'} | ${f.per_unit || '100g'}</div>
                     </div>
                     <div style="text-align:right;">
                         <div style="font-weight:700;">${f.calories} kcal</div>
-                        <div style="font-size: 0.7rem;">P: ${f.protein}g | C: ${f.carbs}g</div>
+                        <div style="font-size: 0.7rem;">P: ${f.protein}g | C: ${f.carbohydrates || f.carbs}g</div>
                     </div>
                 </div>
             `).join('');
@@ -205,37 +184,82 @@
     });
 
     window.logFood = async (name, calories, protein, carbs, fats) => {
+        const meal_type = document.getElementById('mealTypeSelect').value;
         try {
-            await api.post('/tracker/meal', { name, calories, protein, carbs, fats });
+            await api.logMeal({ name, calories, protein, carbs, fats, meal_type });
             searchInput.value = '';
             resultsDiv.innerHTML = '';
             loadDailyTracker();
         } catch (err) { alert("Failed to log food"); }
     };
+    
+    window.deleteMeal = async (id) => {
+        try {
+            await api.deleteMeal(id);
+            loadDailyTracker();
+        } catch (err) { alert("Failed to delete meal"); }
+    };
 
     async function loadDailyTracker() {
         try {
-            const data = await api.get('/tracker/day');
+            const today = new Date().toISOString().split('T')[0];
+            const data = await api.getDailySummary(today);
             
             // Update Totals
-            document.getElementById('calCount').innerText = `${data.calories} kcal`;
-            document.getElementById('pCount').innerText = `${data.protein} / 120g`;
-            document.getElementById('cCount').innerText = `${data.carbs} / 250g`;
-            document.getElementById('fCount').innerText = `${data.fats} / 70g`;
+            const tCals = data.targets?.calories || 2000;
+            const tPro = data.targets?.protein || 120;
+            const tCarb = data.targets?.carbs || 250;
+            const tFat = data.targets?.fats || 70;
+
+            document.getElementById('calCount').innerText = `${Math.round(data.calories || 0)} / ${tCals} kcal`;
+            document.getElementById('pCount').innerText = `${Math.round(data.protein || 0)} / ${tPro}g`;
+            document.getElementById('cCount').innerText = `${Math.round(data.carbs || 0)} / ${tCarb}g`;
+            document.getElementById('fCount').innerText = `${Math.round(data.fats || 0)} / ${tFat}g`;
             
             // Update Bars
-            document.getElementById('pBar').style.width = Math.min((data.protein / 120 * 100), 100) + '%';
-            document.getElementById('cBar').style.width = Math.min((data.carbs / 250 * 100), 100) + '%';
-            document.getElementById('fBar').style.width = Math.min((data.fats / 70 * 100), 100) + '%';
+            document.getElementById('pBar').style.width = Math.min(((data.protein || 0) / tPro * 100), 100) + '%';
+            document.getElementById('cBar').style.width = Math.min(((data.carbs || 0) / tCarb * 100), 100) + '%';
+            document.getElementById('fBar').style.width = Math.min(((data.fats || 0) / tFat * 100), 100) + '%';
 
-            // Update Log
-            if (data.meals.length > 0) {
-                mealLogDiv.innerHTML = data.meals.map(m => `
-                    <div class="food-item">
-                        <div>${m.name}</div>
-                        <div style="font-weight:700;">${m.calories} kcal</div>
-                    </div>
-                `).join('');
+            // Group Logged Meals By Subtype
+            if (data.meals && data.meals.length > 0) {
+                const groups = {"Breakfast": [], "Lunch": [], "Snacks": [], "Dinner": []};
+                data.meals.forEach(m => {
+                    const mType = m.meal_type || "Snacks";
+                    if (groups[mType]) { groups[mType].push(m); } else { groups["Snacks"].push(m); }
+                });
+                
+                mealLogDiv.innerHTML = Object.keys(groups).map(type => {
+                    if (groups[type].length === 0) return '';
+                    return `
+                        <h4 style="margin: 15px 0 5px; color: var(--accent-blue);">${type}</h4>
+                        ${groups[type].map(m => `
+                            <div class="food-item" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>${m.name}</div>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <div style="font-weight:700;">${m.calories} kcal</div>
+                                    <button onclick="deleteMeal('${m.id}')" style="background: rgba(255,50,50,0.3); color:white; border: 1px solid rgba(255,50,50,0.8); border-radius:4px; padding:2px 8px; cursor:pointer;">Delete</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    `;
+                }).join('');
+            } else {
+                mealLogDiv.innerHTML = '<div class="text-muted" style="padding: 2rem; text-align: center;">No meals logged for today.</div>';
+            }
+            
+            // Dynamic Planner
+            const remaining_cals = Math.max(0, tCals - Math.round(data.calories || 0));
+            const remaining_pro = Math.max(0, tPro - Math.round(data.protein || 0));
+            
+            if (remaining_cals > 0) {
+                document.getElementById('nextTaskTitle').innerText = `Next Target: Close the Gap`;
+                document.getElementById('nextTaskDesc').innerText = `You need ${remaining_pro}g more protein and ${remaining_cals} kcal to precisely hit your mapped diagnostic targets.`;
+                document.querySelector('#nextTaskTitle').parentElement.previousElementSibling.style.background = 'rgba(99, 102, 241, 0.2)';
+            } else {
+                document.getElementById('nextTaskTitle').innerText = `Target Synthesized`;
+                document.getElementById('nextTaskDesc').innerText = `You have exceeded or exactly matched your total calorie burn logic!`;
+                document.querySelector('#nextTaskTitle').parentElement.previousElementSibling.style.background = 'rgba(76, 175, 80, 0.3)';
             }
         } catch (err) { console.error(err); }
     }
@@ -243,7 +267,8 @@
     loadDailyTracker();
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('user');
         window.location.href = 'login.html';
     });
   </script>

@@ -5,7 +5,7 @@
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-const api = {
+export const api = {
   /**
    * Internal request wrapper
    */
@@ -36,7 +36,7 @@ const api = {
           sessionStorage.removeItem('access_token');
           window.location.href = '/pages/login.html';
         }
-        throw new Error(data.msg || 'API Request failed');
+        throw new Error(data.msg || data.error || 'API Request failed');
       }
 
       return data;
@@ -67,21 +67,38 @@ const api = {
     });
   },
 
-  async getProfile() {
-    return await this._request('/auth/profile');
+  // Profile and Analytics
+  async saveProfile(profileData) {
+    return await this._request('/analytics/profile', {
+      method: 'POST',
+      body: JSON.stringify(profileData)
+    });
   },
 
-  // Risk Endpoints
   async getRiskScores() {
-    return await this._request('/risk/scores');
+    return await this._request('/analytics/predict');
   },
 
-  // Meal Endpoints
+  // Tracker Endpoints
+  async searchFoods(query, dietType = 'All') {
+    return await this._request(`/tracker/search?q=${encodeURIComponent(query)}&diet=${encodeURIComponent(dietType)}`);
+  },
+
   async logMeal(mealData) {
-    return await this._request('/meals', {
+    return await this._request('/tracker/meal', {
       method: 'POST',
       body: JSON.stringify(mealData)
     });
+  },
+  
+  async deleteMeal(mealId) {
+    return await this._request(`/tracker/meal/${mealId}`, {
+      method: 'DELETE'
+    });
+  },
+  
+  async getDailySummary(date) {
+    return await this._request(`/tracker/day?date=${date}`);
   }
 };
 
