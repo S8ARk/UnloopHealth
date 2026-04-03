@@ -97,15 +97,15 @@
 <body>
   <div class="dashboard-layout">
     <aside class="sidebar">
-      <div class="logo">NutriCore<span style="color: var(--secondary)">.2</span></div>
+      <div class="logo">NUTRICORE</div>
       <nav style="display: flex; flex-direction: column; gap: 0.5rem;">
         <a href="dashboard.html" class="nav-item">Dashboard</a>
-        <a href="#" class="nav-item active">Meal Tracker</a>
+        <a href="tracker.html" class="nav-item active">Meal Tracker</a>
         <a href="profile.html" class="nav-item">Health Profile</a>
         <a href="report.html" class="nav-item">Analytics</a>
       </nav>
       <div style="margin-top: auto;">
-        <a href="../index.html" class="nav-item">Logout</a>
+        <button class="nav-item" id="logoutBtn" style="background:none; border:none; width:100%; cursor:pointer;">Logout</button>
       </div>
     </aside>
 
@@ -116,9 +116,18 @@
         <div class="tracker-main">
           <div class="glass-card search-card">
             <input type="text" id="foodSearch" class="input-field" placeholder="Search foods (e.g. Roti, Paneer)...">
-            <div id="searchResults" style="margin-top: 1rem;">
-              <!-- Initially populated with seeds or empty -->
-              <p class="text-muted" style="font-size: 0.8rem; text-align: center;">Type to search nutritional database...</p>
+            <div id="searchResults" style="margin-top: 1rem; max-height: 200px; overflow-y: auto;"></div>
+          </div>
+
+          <!-- Routine Planner -->
+          <h2 style="margin: 2rem 0 1rem; font-size: 1.25rem;">Routine Planner</h2>
+          <div class="glass-card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-blue);">
+            <div style="display: flex; gap: 15px; align-items: center; padding: 10px;">
+                <div style="background: rgba(99, 102, 241, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">1</div>
+                <div>
+                    <h4 id="nextTaskTitle">Next Task: Pre-Workout Meal</h4>
+                    <p id="nextTaskDesc" style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Eat 2 Boiled Eggs + 1 Fruit for optimal protein (Current goal: 100g/day)</p>
+                </div>
             </div>
           </div>
 
@@ -130,42 +139,114 @@
 
         <aside class="tracker-aside">
           <div class="glass-card macro-summary">
-            <h3>Daily Macros</h3>
-            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1.5rem;">Based on your health profile</p>
+            <h3>Daily Metrics</h3>
+            <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1.5rem;">Target vs Current</p>
             
             <div style="margin-bottom: 1.5rem;">
               <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
                 <span>Proteins</span>
-                <span>0 / 120g</span>
+                <span id="pCount">0 / 120g</span>
               </div>
-              <div class="macro-bar"><div class="macro-progress" style="width: 5%; background: var(--secondary);"></div></div>
+              <div class="macro-bar"><div class="macro-progress" id="pBar" style="width: 0%; background: var(--secondary);"></div></div>
             </div>
 
             <div style="margin-bottom: 1.5rem;">
               <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
                 <span>Carbohydrates</span>
-                <span>0 / 250g</span>
+                <span id="cCount">0 / 250g</span>
               </div>
-              <div class="macro-bar"><div class="macro-progress" style="width: 12%; background: var(--primary);"></div></div>
+              <div class="macro-bar"><div class="macro-progress" id="cBar" style="width: 0%; background: var(--primary);"></div></div>
             </div>
 
             <div style="margin-bottom: 1.5rem;">
               <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
                 <span>Fats</span>
-                <span>0 / 70g</span>
+                <span id="fCount">0 / 70g</span>
               </div>
-              <div class="macro-bar"><div class="macro-progress" style="width: 8%; background: var(--risk-moderate);"></div></div>
+              <div class="macro-bar"><div class="macro-progress" id="fBar" style="width: 0%; background: var(--risk-moderate);"></div></div>
             </div>
 
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
             <div style="display: flex; justify-content: space-between;">
               <span>Total Calories</span>
-              <span style="font-weight: 700;">0 kcal</span>
+              <span id="calCount" style="font-weight: 700;">0 kcal</span>
             </div>
           </div>
         </aside>
       </div>
     </main>
+
+  <script type="module">
+    import { api } from '../js/api.js';
+
+    const searchInput = document.getElementById('foodSearch');
+    const resultsDiv = document.getElementById('searchResults');
+    const mealLogDiv = document.getElementById('mealLog');
+
+    searchInput.addEventListener('input', async (e) => {
+        const q = e.target.value;
+        if (q.length < 2) { resultsDiv.innerHTML = ''; return; }
+        
+        try {
+            const foods = await api.get(`/tracker/search?q=${q}`);
+            resultsDiv.innerHTML = foods.map(f => `
+                <div class="food-item" style="cursor:pointer;" onclick="logFood('${f.name}', ${f.calories}, ${f.protein}, ${f.carbs}, ${f.fats})">
+                    <div>
+                        <strong>${f.name}</strong>
+                        <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">${f.per_unit || '100g'}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-weight:700;">${f.calories} kcal</div>
+                        <div style="font-size: 0.7rem;">P: ${f.protein}g | C: ${f.carbs}g</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) { console.error(err); }
+    });
+
+    window.logFood = async (name, calories, protein, carbs, fats) => {
+        try {
+            await api.post('/tracker/meal', { name, calories, protein, carbs, fats });
+            searchInput.value = '';
+            resultsDiv.innerHTML = '';
+            loadDailyTracker();
+        } catch (err) { alert("Failed to log food"); }
+    };
+
+    async function loadDailyTracker() {
+        try {
+            const data = await api.get('/tracker/day');
+            
+            // Update Totals
+            document.getElementById('calCount').innerText = `${data.calories} kcal`;
+            document.getElementById('pCount').innerText = `${data.protein} / 120g`;
+            document.getElementById('cCount').innerText = `${data.carbs} / 250g`;
+            document.getElementById('fCount').innerText = `${data.fats} / 70g`;
+            
+            // Update Bars
+            document.getElementById('pBar').style.width = Math.min((data.protein / 120 * 100), 100) + '%';
+            document.getElementById('cBar').style.width = Math.min((data.carbs / 250 * 100), 100) + '%';
+            document.getElementById('fBar').style.width = Math.min((data.fats / 70 * 100), 100) + '%';
+
+            // Update Log
+            if (data.meals.length > 0) {
+                mealLogDiv.innerHTML = data.meals.map(m => `
+                    <div class="food-item">
+                        <div>${m.name}</div>
+                        <div style="font-weight:700;">${m.calories} kcal</div>
+                    </div>
+                `).join('');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    loadDailyTracker();
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'login.html';
+    });
+  </script>
   </div>
 </body>
 </html>

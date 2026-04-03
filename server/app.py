@@ -38,7 +38,12 @@ def create_app(test_config=None):
 
     # Register blueprints
     from blueprints.auth_bp import auth_bp
+    from blueprints.analytics_bp import analytics_bp
+    from blueprints.tracker_bp import tracker_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+    app.register_blueprint(tracker_bp, url_prefix='/api/tracker')
 
     return app
 

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUTRICORE | Health Profile</title>
+    <link rel="stylesheet" href="../css/base.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+        }
+        .section-title {
+            margin: 40px 0 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--accent-blue);
+            font-size: 1.2rem;
+        }
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 30px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .save-btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="sidebar">
+        <h1 class="logo">NUTRICORE</h1>
+        <nav>
+            <a href="dashboard.html" class="nav-item">Dashboard</a>
+            <a href="tracker.html" class="nav-item">Meal Tracker</a>
+            <a href="profile.html" class="nav-item active">Health Profile</a>
+            <a href="report.html" class="nav-item">Analytics</a>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="nav-item" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <div class="profile-container">
+            <h1>Personal Health Profile</h1>
+            <p style="color: rgba(255, 255, 255, 0.6);">Complete your diagnostic baseline to enable ML risk predictions.</p>
+
+            <form id="profileForm">
+                <div class="section-title">Physical Metrics</div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Age</label>
+                        <input type="number" name="age" required placeholder="35">
+                    </div>
+                    <div class="input-group">
+                        <label>Gender</label>
+                        <select name="gender">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Height (cm)</label>
+                        <input type="number" name="height_cm" required placeholder="175">
+                    </div>
+                    <div class="input-group">
+                        <label>Weight (kg)</label>
+                        <input type="number" name="weight_kg" required placeholder="72">
+                    </div>
+                </div>
+
+                <div class="section-title">Medical & Lifestyle</div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Sleep Hours</label>
+                        <input type="number" name="sleep_hours" step="0.5" placeholder="7">
+                    </div>
+                    <div class="input-group">
+                        <label>Activity Level</label>
+                        <select name="activity_level">
+                            <option value="sedentary">Sedentary (Office worker)</option>
+                            <option value="moderate">Moderate (Gym 3-4 days)</option>
+                            <option value="active">Active (Daily movement)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Daily Steps Goal</label>
+                        <input type="number" name="daily_steps" placeholder="10000">
+                    </div>
+                    <div class="input-group">
+                        <label>Water Intake Goal (L)</label>
+                        <input type="number" name="water_liters" step="0.5" placeholder="2.5">
+                    </div>
+                </div>
+
+                <div class="input-group" style="padding-top: 20px;">
+                    <label>Known Medical Conditions / Allergies</label>
+                    <textarea name="medical_history" rows="3" placeholder="e.g. Hypertension, Nut Allergy..."></textarea>
+                </div>
+
+                <button type="submit" class="save-btn">Update My Diagnostic Baseline</button>
+            </form>
+        </div>
+    </main>
+
+    <script type="module">
+        import { api } from '../js/api.js';
+
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await api.post('/analytics/profile', data);
+                alert("Baseline updated! Check your Dashboard for new risk assessments.");
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                alert("Failed to update profile: " + err.message);
+            }
+        });
+    </script>
+</body>
+</html>
