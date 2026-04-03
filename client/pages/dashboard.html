@@ -7,43 +7,6 @@
   <link rel="stylesheet" href="../css/base.css">
   <script src="../js/api.js" defer></script>
   <style>
-    .dashboard-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      min-height: 100vh;
-    }
-    
-    .sidebar {
-      background: rgba(15, 23, 42, 0.9);
-      border-right: 1px solid var(--border);
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-    
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      font-weight: 600;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      transition: var(--transition);
-    }
-    
-    .nav-item:hover, .nav-item.active {
-      background: rgba(99, 102, 241, 0.1);
-      color: var(--primary);
-    }
-    
-    .main-content {
-      padding: 3rem;
-      overflow-y: auto;
-    }
-    
     .header-section {
       display: flex;
       justify-content: space-between;
@@ -103,17 +66,13 @@
     }
     
     .health-score-ring::after {
-      content: '85';
+      content: '';
       position: absolute;
       width: 100px;
       height: 100px;
       background: var(--bg-dark);
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-weight: 700;
+      display: block;
     }
   </style>
 </head>
@@ -159,11 +118,16 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        const response = await api.get('/analytics/predict');
+        const response = await api.getRiskScores();
         const data = response.data;
         
-        document.getElementById('welcomeUser').textContent = `Welcome back, ${response.user_name}`;
-        document.getElementById('habitSummary').textContent = `You have ${data.recommendations.dos.length} personalized memos today.`;
+        const userObj = JSON.parse(sessionStorage.getItem('user') || '{}');
+        const userName = userObj.full_name || 'User';
+        
+        document.getElementById('welcomeUser').textContent = `Welcome back, ${userName}`;
+        
+        const memos = data.recommendations && data.recommendations.dos ? data.recommendations.dos : [];
+        document.getElementById('habitSummary').textContent = `You have ${memos.length} personalized memos today.`;
 
         // Update Score Ring
         const riskMap = {"Low": 90, "Moderate": 70, "High": 45, "Critical": 15};
@@ -171,8 +135,7 @@
         const ring = document.getElementById('overallScore');
         ring.style.background = `conic-gradient(var(--risk-low) ${score}%, transparent 0)`;
         ring.setAttribute('style', ring.getAttribute('style') + `; --score: '${score}'`);
-        // Adding a custom style to show the score text via CSS if needed, but here we'll just update it
-        ring.innerHTML = `<span style="position:absolute; font-size:1.5rem; font-weight:700;">${score}</span>`;
+        ring.innerHTML = `<span style="position:absolute; z-index: 10; font-size:1.5rem; font-weight:700;">${score}</span>`;
 
         // Update Risk Grid
         const grid = document.getElementById('riskGrid');
@@ -191,7 +154,8 @@
 
         // Update Memos
         const memoBox = document.getElementById('habitMemos');
-        data.recommendations.dos.slice(0, 3).forEach(memo => {
+        memoBox.innerHTML = '';
+        memos.slice(0, 3).forEach(memo => {
           memoBox.innerHTML += `
             <div class="glass-card" style="min-width: 250px; border-left: 4px solid var(--risk-low);">
               <p style="font-size: 0.7rem; color: var(--risk-low); font-weight: 700; margin-bottom: 5px;">DO</p>
@@ -202,13 +166,21 @@
 
       } catch (err) {
         console.error(err);
-        if (err.status === 404) window.location.href = 'profile.html';
-        else if (err.status === 401) window.location.href = 'login.html';
+        if (err.message.includes('No profile found') || err.message.includes('Please complete your health profile first')) {
+            window.location.href = 'profile.html';
+        }
+        else if (err.message.includes('Missing Authorization')) {
+            window.location.href = 'login.html';
+        } else {
+            // Keep original "Loading..." text but show error status
+            document.getElementById('habitSummary').textContent = "Failed to load trends: " + err.message;
+        }
       }
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
       window.location.href = 'login.html';
     });
   </script>
