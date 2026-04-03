@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriCore 2.0 | Predictive Health Platform</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    .hero-container {
+      max-width: 1200px;
+      margin: 100px auto;
+      text-align: center;
+      padding: 0 20px;
+    }
+    
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 4.5rem;
+      background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2rem;
+      line-height: 1.1;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto 3rem auto;
+      line-height: 1.6;
+    }
+    
+    .cta-group {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+    
+    .nav-bar {
+      padding: 2rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -1px;
+    }
+    
+    .risk-badges {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 4rem;
+    }
+    
+    .risk-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav-bar">
+    <div class="logo">NutriCore<span style="color: var(--secondary)">.2</span></div>
+    <div class="cta-group">
+      <a href="pages/login.html" class="btn text-muted" style="text-decoration: none;">Login</a>
+      <a href="pages/register.html" class="btn btn-primary">Try for Free</a>
+    </div>
+  </nav>
+
+  <main class="hero-container">
+    <h1 class="hero-title">Predict your Health,<br>Reverse your Risk.</h1>
+    <p class="hero-subtitle">
+      Move beyond calorie counting. Our predictive engine analyzes your patterns to reveal 
+      hidden risks, providing a visceral countdown and holistic solutions to keep you away from disease.
+    </p>
+    
+    <div class="cta-group">
+      <a href="pages/register.html" class="btn btn-primary" style="padding: 1rem 3rem; font-size: 1.1rem; text-decoration: none;">Get Started Now</a>
+      <a href="#features" class="btn" style="border: 1px solid var(--border); padding: 1rem 3rem; font-size: 1.1rem; text-decoration: none;">How it works</a>
+    </div>
+
+    <div class="risk-badges">
+      <div class="risk-badge"><span class="risk-dot bg-low"></span> Diabetes Low</div>
+      <div class="risk-badge"><span class="risk-dot bg-high"></span> Hypertension High</div>
+      <div class="risk-badge"><span class="risk-dot bg-low"></span> Heart Disease Low</div>
+    </div>
+  </main>
+</body>
+</html>

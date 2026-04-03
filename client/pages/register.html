@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | NutriCore 2.0</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <script src="../js/api.js" defer></script>
+  <style>
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .auth-form {
+      width: 100%;
+      max-width: 500px;
+      padding: 2.5rem;
+    }
+    
+    .auth-title {
+      font-size: 1.875rem;
+      font-family: 'Outfit', sans-serif;
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    
+    .auth-subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    
+    .grid-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 0.8rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .auth-footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    .auth-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .error-msg {
+      color: var(--risk-high);
+      background: rgba(239, 68, 68, 0.1);
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+      display: none;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-container">
+    <div class="glass-card auth-form">
+      <h2 class="auth-title">Create Account</h2>
+      <p class="auth-subtitle">Start your journey to reverse risk</p>
+      
+      <div id="errorMessage" class="error-msg"></div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" class="input-field" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="input-field" placeholder="john@example.com" required>
+        </div>
+        
+        <div class="grid-group">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm</label>
+            <input type="password" id="confirmPassword" class="input-field" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem; text-align: center;">Initial Health Profile</p>
+
+        <div class="grid-group">
+          <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" class="input-field" placeholder="25">
+          </div>
+          <div class="form-group">
+            <label for="weight">Weight (kg)</label>
+            <input type="number" id="weight" class="input-field" placeholder="70">
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+      </form>
+      
+      <p class="auth-footer">
+        Already have an account? <a href="login.html">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const name = document.getElementById('name').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const age = document.getElementById('age').value;
+      const weight = document.getElementById('weight').value;
+      const errorEl = document.getElementById('errorMessage');
+      
+      if (password !== confirmPassword) {
+        errorEl.textContent = "Passwords do not match";
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      try {
+        errorEl.style.display = 'none';
+        
+        await window.api.register({
+          email,
+          name,
+          password,
+          profile: { age, weight_kg: weight }
+        });
+        
+        // Success -> redirect to login
+        alert('Account created! Please log in.');
+        window.location.href = 'login.html';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
